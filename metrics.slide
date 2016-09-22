@@ -1,0 +1,140 @@
+Metrics and Profiling
+Round Table Introduction
+20 Sep 2016
+Tags: prometheus, .net, golang, go, c#, java, monitoring, metrics, grafana
+
+Adrian Hesketh
+Principal Consultant, Infinity Works Consulting
+adrian.hesketh@infinityworks.com
+https://infinityworks.com
+
+* What is a metric?
+
+- A sample - a record of a numeric value at a point in time.
+- An event - a record that an event happened at a point in time (a sample with a value of 1).
+
+- An aggregation of a number of samples (e.g. average, min, max) over a range of time.
+
+* Why capture metrics?
+
+- Plan to make changes based on the metrics.
+  - Stop an advertising campaign.
+  - Increase number of servers.
+
+"...there should be a distinct difference in your mind between metrics collection
+and monitoring with the intention of alerting."
+
+John Allspaw, Web Operations
+
+* Sampling rate
+
+.image samplingrate.jpg 
+
+http://www.jazzpoparkisto.net/audio/audio32.html
+
+* Ways to manage the data volume
+
+- Reduce the granularity of data over time by aggregating.
+- Pre-calculate aggregations or dashboards.
+- Don't wait to show the end result, continously improve the data.
+
+* Aggregations
+
+- min
+- avg
+- max
+
+* Beware of the Average
+
+.image mode_median_mean.png 300 _
+
+By Cmglee - Own work, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=38969094
+
+* Extracting metrics from logs
+
+- Can log out data to log files and extract samples or events from them:
+
+    192.168.119.11 - - [01/Jun/2015:13:10:44 +0100] ...
+      "POST /ws/svc/bank?ssid=d123&ssid-branchId=9133 HTTP/1.1" 200 664
+
+    filter {
+      grok {
+        match => [ "message", "%{IP:client} - - 
+          \[(?<timestamp>%{MONTHDAY}[./-]%{MONTH}[./-]%{YEAR}:%{TIME}\s+%{ISO8601_TIMEZONE})] 
+          \"%{WORD:verb} %{URIPATHPARAM:uri}\s+HTTP.+?\" 
+          %{NUMBER:status} 
+          %{NUMBER:response_time}" 
+        ]
+      }
+      ## Tell Logstash which field is the time to index the event against.
+      date {
+        match => [ "timestamp" , "dd/MMM/yyyy:HH:mm:ss Z" ]
+      }
+    }  
+
+* Splunk
+
+.image splunk.png _ 1000
+
+https://splunkbase.splunk.com/app/1589/
+
+* Profiling
+
+Find out what a program is doing.
+
+- Where is it spending it's time?
+- How much network traffic is it generating?
+- How much RAM is it using?
+
+* Profiler Types
+
+- Hooked into platform (e.g. .Net Profiling API, IIS).
+- Sampling profiler.
+- Instrumentation (code added at compile, or runtime).
+
+* Tools
+
+* AppDynamics
+
+.image appdynamics.png 500 _
+
+http://appdynamics.co.uk
+
+* ANTS Profiler (C#)
+
+.image ants_profiler.jpg 470 _
+
+https://www.simple-talk.com/dotnet/net-tools/performance-optimization-in-bastion-using-ants-performance-profiler/
+
+* New Relic
+
+.image new_relic.png 470 _
+
+http://newrelic.com
+
+* Sampling
+
+- Stop the program periodically and track:
+ - Which function each thread is executing OR
+ - What is held in RAM, and how long it's been there.
+
+* Memory consumption
+
+.image cheney_gc.png 470 _
+
+http://dave.cheney.net/2014/07/11/visualising-the-go-garbage-collector
+
+* Instrumentation
+
+- Change your program to log data.
+- Pushing metrics out on the network introduces load to your application.
+ - IMCP (Ganglia)
+ - Have a separate process to push metrics (Logstash)
+ - Use pull instead (Prometheus)
+- Pulling metrics introduces load on your application.
+ - Aggregate multiple samples inside your application (Prometheus)
+
+* Concurrency montoring
+
+- Track the number of threads, or sub-processes which are executing.
+- Delays due to thread starvation.
